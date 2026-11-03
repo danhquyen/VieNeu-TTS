@@ -99,6 +99,46 @@ services:
               capabilities: [gpu]
     restart: unless-stopped
 
+  # ========================================================
+  # Web UI on GPU for servers — prod image (source baked in), deployed by scripts/deploy.sh
+  # next to api-gpu. Includes the API usage guide (apps/api_docs.py).
+  #   docker compose -f docker/docker-compose.yml --profile web-gpu up -d
+  # ========================================================
+  web-gpu:
+    profiles: ["web-gpu"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gpu
+      target: prod
+    container_name: vieneu-tts-web-gpu
+    command: ["python", "apps/gradio_main.py"]
+    ports:
+      - "${WEB_PORT:-8601}:7860"
+    environment:
+      - HF_HOME=${HF_HOME:-/home/app/.cache/huggingface}
+      - PYTHONUNBUFFERED=1
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - GRADIO_SERVER_PORT=7860
+      - GRADIO_SHARE=0
+      - VIENEU_WEB_AUTH=${VIENEU_WEB_AUTH:-}
+      - VIENEU_API_PUBLIC_URL=${VIENEU_API_PUBLIC_URL:-}
+    volumes:
+      - huggingface_cache:/home/app/.cache/huggingface
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:7860/', timeout=3).status == 200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 120s
+      retries: 3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
   api-cpu:
     profiles: ["api-cpu"]
     build:

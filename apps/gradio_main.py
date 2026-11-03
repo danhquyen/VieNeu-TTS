@@ -35,6 +35,7 @@ except ImportError:
     fitz = None
 
 from apps.srt_speech import srt_to_speech
+from apps.api_docs import api_docs_markdown
 from apps.user_voices import (
     load_user_voices, save_user_voice, delete_user_voice, list_user_voices, supports_saving,
 )
@@ -2254,7 +2255,10 @@ with gr.Blocks(theme=theme, css=css, title="VieNeu-TTS", head=head_html) as demo
                     "<div style='text-align: center; color: #64748b; font-size: 0.8rem;'>🔒 Audio được đóng dấu bản quyền ẩn (Perth Watermarker) để định danh AI.</div>",
                     visible=_watermark_available(),
                 )
-        
+
+        with gr.Accordion("📘 Hướng dẫn sử dụng API (tích hợp hệ thống khác)", open=False, elem_id="api-docs"):
+            gr.Markdown(api_docs_markdown())
+
         # ONNX codecs (v2 CPU) cannot clone: hide the tab; v3 / v2 GPU keep it.
         codec_select.change(
             lambda codec, bb: gr.update(visible=_supports_cloning(bb) and "onnx" not in (codec or "").lower()),
