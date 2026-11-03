@@ -6,7 +6,7 @@
 #   ./scripts/deploy.sh            # = up: kiểm tra máy, build image, chạy nền, chờ sẵn sàng
 #   ./scripts/deploy.sh up
 #   ./scripts/deploy.sh update     # git pull + build lại + chạy lại
-#   ./scripts/deploy.sh restart
+#   ./scripts/deploy.sh restart    # áp dụng thay đổi trong docker/.env (tạo lại container)
 #   ./scripts/deploy.sh down       # dừng và xoá container (giữ cache model)
 #   ./scripts/deploy.sh logs [api|web]   # xem log (Ctrl+C để thoát)
 #   ./scripts/deploy.sh status     # trạng thái container + /health
@@ -198,7 +198,7 @@ cmd_test() {
 case "${1:-up}" in
   up)      cmd_up ;;
   update)  cmd_update ;;
-  restart) compose restart "$API_SERVICE" "$WEB_SERVICE"; wait_all ;;
+  restart) ensure_env; compose up -d --force-recreate "$API_SERVICE" "$WEB_SERVICE"; wait_all ;;   # tạo lại container để nạp docker/.env mới
   down)    compose down ;;
   logs)    cmd_logs "${2:-}" ;;
   status)  compose ps; curl -s "http://127.0.0.1:$(api_port)/health" && echo || warn "/health không phản hồi" ;;
