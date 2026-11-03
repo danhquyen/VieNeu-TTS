@@ -16,7 +16,7 @@ ENV PYTHONUNBUFFERED=1 \
     GRADIO_SHARE=0
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-RUN useradd --create-home --uid 1000 app && mkdir -p /workspace /opt/venv && chown -R app:app /workspace /opt/venv
+RUN useradd --create-home --uid 1000 app && mkdir -p /workspace /opt/venv /home/app/.cache/huggingface && chown -R app:app /workspace /opt/venv /home/app/.cache
 WORKDIR /workspace
 
 # Dependencies only, wheels only (no setup.py execution), no project build: the app

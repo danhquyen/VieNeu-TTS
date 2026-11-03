@@ -132,7 +132,12 @@ cmd_up() {
   check_prereqs
   ensure_env
   log "Build image và khởi động container (lần đầu build mất ~5-10 phút)..."
-  compose up -d --build "$SERVICE"
+  compose build "$SERVICE"
+  # Volume cache model có thể đã được tạo với owner root (image cũ chưa có sẵn thư mục này),
+  # trong khi container chạy bằng user app (UID 1000) → không tải được model. Chown lại cho chắc.
+  log "Cấp quyền thư mục cache model cho user app..."
+  compose run --rm --no-deps --user root --entrypoint chown "$SERVICE" -R 1000:1000 /home/app/.cache/huggingface
+  compose up -d "$SERVICE"
   wait_healthy
   print_info
 }
