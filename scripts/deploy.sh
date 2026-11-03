@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Triển khai VieNeu-TTS API (chuẩn OpenAI, streaming) bằng Docker trên server Linux có GPU NVIDIA.
-# Dùng profile `api-gpu` trong docker/docker-compose.yml → POST http://<server>:8000/v1/audio/speech
+# Dùng profile `api-gpu` trong docker/docker-compose.yml → POST http://<server>:8600/v1/audio/speech
 #
 #   ./scripts/deploy.sh            # = up: kiểm tra máy, build image, chạy nền, chờ /health
 #   ./scripts/deploy.sh up
@@ -13,7 +13,7 @@
 #
 # Cấu hình nằm ở docker/.env (tự tạo ở lần chạy đầu, kèm API key ngẫu nhiên):
 #   VIENEU_API_KEY      key Bearer cho client (HRM backend)
-#   API_PORT            port public trên server (mặc định 8000)
+#   API_PORT            port public trên server (mặc định 8600)
 #   VIENEU_MAX_STREAMS  số luồng đồng thời (mặc định 16, RTX 3060 tối đa ~32)
 #   VIENEU_QUEUE        số request được xếp hàng khi hết slot
 #   VIENEU_WATERMARK    1 = đóng watermark âm thanh, 0 = tắt
@@ -46,7 +46,7 @@ env_get() {
   grep -E "^$1=" "$ENV_FILE" | tail -n1 | cut -d= -f2-
 }
 
-api_port() { local p; p="$(env_get API_PORT)"; echo "${p:-8000}"; }
+api_port() { local p; p="$(env_get API_PORT)"; echo "${p:-8600}"; }
 
 check_prereqs() {
   log "Kiểm tra môi trường..."
@@ -80,7 +80,7 @@ ensure_env() {
   cat > "$ENV_FILE" <<EOF
 # Cấu hình VieNeu-TTS API (Docker, profile api-gpu). Không commit file này.
 VIENEU_API_KEY=$key
-API_PORT=8000
+API_PORT=8600
 VIENEU_MAX_STREAMS=16
 VIENEU_QUEUE=16
 VIENEU_QUEUE_TIMEOUT=10
