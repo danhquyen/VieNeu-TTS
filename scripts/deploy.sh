@@ -91,7 +91,7 @@ EOF
 }
 
 wait_healthy() {
-  local port url start elapsed
+  local port url start elapsed restarts line last=""
   port="$(api_port)"; url="http://127.0.0.1:${port}/health"; start=$(date +%s)
   log "Chờ server sẵn sàng tại $url (lần đầu tải model có thể mất vài phút)..."
   while true; do
@@ -99,12 +99,19 @@ wait_healthy() {
       ok "Server đã chạy: $(curl -s "$url")"
       return 0
     fi
-    if ! docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
-      docker logs --tail 50 "$CONTAINER" 2>&1 || true
-      die "Container $CONTAINER đã dừng — xem log ở trên."
+    # restart: unless-stopped che mất crash — container vẫn "chạy" nhưng khởi động lại liên tục.
+    restarts="$(docker inspect -f '{{.RestartCount}}' "$CONTAINER" 2>/dev/null || echo 0)"
+    if [ "${restarts:-0}" -gt 0 ] || ! docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
+      docker logs --tail 60 "$CONTAINER" 2>&1 || true
+      die "Container $CONTAINER bị crash (restart ${restarts} lần) — xem log ở trên."
     fi
     elapsed=$(( $(date +%s) - start ))
     [ "$elapsed" -lt "$HEALTH_TIMEOUT" ] || die "Quá ${HEALTH_TIMEOUT}s chưa sẵn sàng. Xem log: ./scripts/deploy.sh logs"
+    # In dòng log mới nhất (tiến độ tải model, load GPU...) để không phải chờ mù.
+    line="$(docker logs --tail 1 "$CONTAINER" 2>&1 | tr '\r' '\n' | tail -n1 | cut -c1-150)"
+    if [ -n "$line" ] && [ "$line" != "$last" ]; then
+      printf '   [%4ss] %s\n' "$elapsed" "$line"; last="$line"
+    fi
     sleep 5
   done
 }
